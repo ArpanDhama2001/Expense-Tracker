@@ -1,6 +1,6 @@
 # Expense Tracker
 
-A simple and elegant expense tracking web application with user authentication, expense management, and reporting features.
+A simple and elegant expense tracking web application with user authentication, expense management, reporting features, and AI-powered chat assistance.
 
 ## Features
 
@@ -27,6 +27,12 @@ A simple and elegant expense tracking web application with user authentication, 
   - Expense details for the selected period
   - Print reports
 
+- **AI Chat Assistant**
+  - Get insights about your spending habits
+  - Ask questions about your expenses
+  - Receive personalized saving tips based on your spending patterns
+  - Get help with using the application features
+
 - **UI Features**
   - Responsive design for all devices
   - Soothing animations
@@ -47,6 +53,7 @@ A simple and elegant expense tracking web application with user authentication, 
   - Express.js
   - MySQL Database
   - express-session for authentication
+  - OpenAI API for AI chat assistance
 
 ## Installation
 
@@ -61,9 +68,10 @@ A simple and elegant expense tracking web application with user authentication, 
    npm install
    ```
 
-3. Configure the database
+3. Configure the database and API keys
    - Create a MySQL database
-   - Update the .env file with your database credentials
+   - Get an OpenAI API key
+   - Update the .env file with your database credentials and API key
 
 4. Start the server
    ```
@@ -91,6 +99,7 @@ DB_USER=your_mysql_username
 DB_PASSWORD=your_mysql_password
 DB_NAME=expense_tracker
 SESSION_SECRET=your_secret_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
 ## Usage
@@ -100,6 +109,7 @@ SESSION_SECRET=your_secret_key_here
 3. Add your expenses with amount, category, date, and optional description
 4. View and manage your expenses
 5. Generate reports for specific date ranges
+6. Use the AI chat assistant by clicking the chat button in the bottom right corner
 
 ## License
 

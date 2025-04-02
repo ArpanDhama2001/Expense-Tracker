@@ -35,7 +35,7 @@ const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
 const toast = document.getElementById('toast');
 
 // API URLs
-const API_URL = '/api';
+const API_URL = window.location.origin + '/api';
 const AUTH_URL = `${API_URL}/auth`;
 const EXPENSES_URL = `${API_URL}/expenses`;
 
@@ -57,6 +57,25 @@ let categoryColors = {
   'Other': '#8338EC'
 };
 
+// AI Chat Elements
+const chatButton = document.getElementById('chatButton');
+const chatContainer = document.getElementById('chatContainer');
+const chatClose = document.getElementById('chatClose');
+const chatMessages = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSend');
+
+// Chat Variables
+let isChatOpen = false;
+let isWaitingForResponse = false;
+
+// Initialize markdown-it
+const md = window.markdownit({
+    html: true,
+    breaks: true,
+    linkify: true
+});
+
 // Helpers
 function formatDate(dateString) {
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
@@ -64,7 +83,10 @@ function formatDate(dateString) {
 }
 
 function formatCurrency(amount) {
-  return '$' + parseFloat(amount).toFixed(2);
+  return `₹${Number(amount).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
 }
 
 function showToast(message, type = '') {
@@ -710,6 +732,121 @@ function printReport() {
   printWindow.document.close();
 }
 
+// AI Chat Functions
+function toggleChat() {
+  isChatOpen = !isChatOpen;
+  if (isChatOpen) {
+    chatContainer.classList.add('open');
+    chatInput.focus();
+  } else {
+    chatContainer.classList.remove('open');
+  }
+}
+
+function addMessage(content, isUser = false) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+    
+    if (isUser) {
+        messageDiv.textContent = content;
+    } else {
+        // Parse markdown for AI messages
+        messageDiv.innerHTML = md.render(content);
+        
+        // Add markdown-specific styles
+        messageDiv.classList.add('markdown-content');
+        
+        // Style code blocks
+        messageDiv.querySelectorAll('code').forEach(code => {
+            if (code.parentElement.tagName === 'PRE') {
+                code.parentElement.classList.add('code-block');
+            } else {
+                code.classList.add('inline-code');
+            }
+        });
+    }
+    
+    chatMessages.appendChild(messageDiv);
+    
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showTypingIndicator() {
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'typing-indicator';
+  typingDiv.id = 'typingIndicator';
+  
+  for (let i = 0; i < 3; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    typingDiv.appendChild(dot);
+  }
+  
+  chatMessages.appendChild(typingDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  const typingIndicator = document.getElementById('typingIndicator');
+  if (typingIndicator) {
+    typingIndicator.remove();
+  }
+}
+
+async function sendChatMessage(message) {
+  if (!message.trim() || isWaitingForResponse) return;
+  
+  console.log('Sending chat message:', message);
+  console.log('API URL:', `${API_URL}/chat`);
+  
+  // Add user message to chat
+  addMessage(message, true);
+  
+  // Clear input
+  chatInput.value = '';
+  
+  // Show typing indicator
+  showTypingIndicator();
+  
+  // Set waiting flag
+  isWaitingForResponse = true;
+  
+  try {
+    // Send message to backend
+    console.log('Making fetch request...');
+    const response = await fetch(`${API_URL}/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message }),
+      credentials: 'include'
+    });
+    
+    console.log('Response status:', response.status);
+    
+    // Remove typing indicator
+    removeTypingIndicator();
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Response data:', data);
+      addMessage(data.response);
+    } else {
+      const errorData = await response.json();
+      console.error('Error response:', errorData);
+      addMessage('Sorry, I had trouble processing your request. Please try again later.');
+    }
+  } catch (error) {
+    console.error('Chat error:', error);
+    removeTypingIndicator();
+    addMessage('Sorry, I had trouble processing your request. Please try again later.');
+  } finally {
+    isWaitingForResponse = false;
+  }
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
   // Check auth status on load
@@ -831,4 +968,27 @@ document.addEventListener('DOMContentLoaded', () => {
   closeEditModal.addEventListener('click', () => hideModal(editExpenseModal));
   closeDeleteModal.addEventListener('click', () => hideModal(deleteConfirmationModal));
   cancelDeleteBtn.addEventListener('click', () => hideModal(deleteConfirmationModal));
+  
+  // Chat functionality
+  chatButton.addEventListener('click', toggleChat);
+  chatClose.addEventListener('click', toggleChat);
+  
+  chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      sendChatMessage(chatInput.value);
+    }
+  });
+  
+  chatSend.addEventListener('click', () => {
+    sendChatMessage(chatInput.value);
+  });
+  
+  // Close chat when clicking outside
+  document.addEventListener('click', (e) => {
+    if (isChatOpen && 
+        !chatContainer.contains(e.target) && 
+        !chatButton.contains(e.target)) {
+      toggleChat();
+    }
+  });
 }); 

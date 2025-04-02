@@ -7,6 +7,7 @@ require('dotenv').config();
 const { initializeDatabase } = require('./config/database');
 const authRoutes = require('./routes/auth');
 const expenseRoutes = require('./routes/expenses');
+const aiChatRoutes = require('./routes/aiChat');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,6 +32,7 @@ app.use(session({
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
+app.use('/api/chat', aiChatRoutes);
 
 // Serve static files for any other route (SPA support)
 app.get('*', (req, res) => {
